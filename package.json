@@ -1,0 +1,28 @@
+{
+  "name": "whatsapp-gateway-kopi9",
+  "version": "1.0.0",
+  "description": "WhatsApp Gateway & Order Recovery Service for Toko Kopi Sembilan",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node test/test-sanity.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "gateway",
+    "baileys",
+    "toko-kopi-sembilan"
+  ],
+  "author": "Toko Kopi Sembilan",
+  "license": "ISC",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.19",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pino": "^9.6.0",
+    "qrcode": "^1.5.4"
+  }
+}
