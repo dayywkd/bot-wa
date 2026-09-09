@@ -38,7 +38,7 @@ function parseProductText(text) {
       const stockStr = val.replace(/\D/g, '') || '10';
       result.stock = parseInt(stockStr, 10) || 10;
     } else if (key === 'kategori') {
-      result.category = val || 'Biji Kopi';
+      result.category = val || 'Filter';
     } else if (key === 'deskripsi' || key === 'dekripsi' || key === 'keterangan') {
       result.description = val;
     } else if (key === 'roast' || key === 'roasting') {
@@ -118,7 +118,7 @@ Kirim *Foto Produk* dengan format keterangan:
 Nama: Arabika Kerinci 250g
 Harga: 85000
 Stok: 20
-Kategori: Biji Kopi
+Kategori: Filter
 Deskripsi: Single origin aroma floral dan citrus manis.
 
 📊 *2. Cek Pesanan Terbaru*
@@ -167,7 +167,7 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
 
       if (!parsed.name || parsed.price <= 0) {
         await sock.sendMessage(remoteJid, {
-          text: `⚠️ *Format Belum Lengkap!*\n\nMinimal sertakan Nama dan Harga.\nContoh:\n\`/tambah-produk\nNama: Robusta Temanggung\nHarga: 65000\nStok: 25\nKategori: Biji Kopi\``,
+          text: `⚠️ *Format Belum Lengkap!*\n\nMinimal sertakan Nama dan Harga.\nContoh:\n\`/tambah-produk\nNama: Robusta Temanggung\nHarga: 65000\nStok: 25\nKategori: Filter\``,
         });
         return;
       }
