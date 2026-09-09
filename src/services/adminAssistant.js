@@ -96,7 +96,8 @@ async function handleIncomingMessage(sock, msg) {
     console.log(`[WhatsApp] Pesan masuk dari: ${senderPhone} (isOwner: ${isOwner}) | Teks: "${bodyText}"`);
 
     const lowerText = bodyText.toLowerCase();
-    const cleanCmd = lowerText.replace(/^\//, ''); // Bisa pakai slash '/' ataupun tidak
+    const lowerCmd = lowerText;
+    const cleanCmd = lowerText.replace(/^\//, '').trim(); // Mendukung dengan '/' ataupun tanpa '/'
 
     // 1. Perintah: /bantuan, /help, /menu, bantuan, menu
     if (cleanCmd === 'bantuan' || cleanCmd === 'help' || cleanCmd === 'menu') {
@@ -134,7 +135,7 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
 
     // Jika BUKAN nomor Owner, tolak perintah khusus admin secara sopan
     if (!isOwner) {
-      if (lowerText.startsWith('/tambah') || lowerText.startsWith('/ubah') || lowerText.startsWith('/pesanan')) {
+      if (cleanCmd.startsWith('tambah') || cleanCmd.startsWith('ubah') || cleanCmd.startsWith('pesanan') || cleanCmd.startsWith('stok')) {
         await sock.sendMessage(remoteJid, {
           text: `⚠️ *Akses Ditolak*\nPerintah ini khusus untuk nomor Owner Toko Kopi Sembilan.\nNomor Anda terdeteksi: *${senderPhone}*`,
         });
@@ -152,9 +153,9 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
 
     console.log(`[Admin Assistant] Mengeksekusi perintah Owner (${senderPhone}): ${bodyText.slice(0, 50)}...`);
 
+    // 2. Perintah: /tambah-produk atau /tambah (atau tambah-produk)
+    if (cleanCmd.startsWith('tambah-produk') || cleanCmd.startsWith('tambah')) {
 
-    // 2. Perintah: /tambah-produk atau /tambah
-    if (lowerCmd.startsWith('/tambah-produk') || lowerCmd.startsWith('/tambah')) {
       const parsed = parseProductText(bodyText);
 
       if (!parsed.name || parsed.price <= 0) {
@@ -221,8 +222,8 @@ Produk sudah langsung aktif dan dapat dibeli oleh pelanggan di website!`;
       return;
     }
 
-    // 3. Perintah: /pesanan atau /order
-    if (lowerCmd === '/pesanan' || lowerCmd === '/order') {
+    // 3. Perintah: /pesanan atau /order (atau pesanan)
+    if (cleanCmd === 'pesanan' || cleanCmd === 'order') {
       await sock.sendMessage(remoteJid, { text: '⏳ Mengambil data pesanan terbaru dari website...' });
 
       try {
@@ -255,8 +256,8 @@ Produk sudah langsung aktif dan dapat dibeli oleh pelanggan di website!`;
       return;
     }
 
-    // 4. Perintah: /stok atau /produk
-    if (lowerCmd === '/stok' || lowerCmd === '/produk') {
+    // 4. Perintah: /stok atau /produk (atau stok)
+    if (cleanCmd === 'stok' || cleanCmd === 'produk') {
       await sock.sendMessage(remoteJid, { text: '⏳ Mengambil daftar stok produk...' });
 
       try {
@@ -287,7 +288,7 @@ Produk sudah langsung aktif dan dapat dibeli oleh pelanggan di website!`;
     }
 
     // 5. Perintah: /ubah-stok [nama] [jumlah]
-    if (lowerCmd.startsWith('/ubah-stok')) {
+    if (cleanCmd.startsWith('ubah-stok')) {
       const parts = bodyText.split(' ').filter(Boolean);
       if (parts.length < 3) {
         await sock.sendMessage(remoteJid, {
@@ -317,7 +318,8 @@ Produk sudah langsung aktif dan dapat dibeli oleh pelanggan di website!`;
     }
 
     // 6. Perintah: /ubah-harga [nama] [harga]
-    if (lowerCmd.startsWith('/ubah-harga')) {
+    if (cleanCmd.startsWith('ubah-harga')) {
+
       const parts = bodyText.split(' ').filter(Boolean);
       if (parts.length < 3) {
         await sock.sendMessage(remoteJid, {
