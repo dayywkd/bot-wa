@@ -101,9 +101,31 @@ console.log('  [PASS] Auth Middleware memvalidasi Bearer Token dengan tepat.');
 
 // 4. Test Konfigurasi
 console.log('\n4. Pengujian Konfigurasi:');
-assert.strictEqual(config.botPhone, '6285855180131');
-assert.strictEqual(config.ownerPhone, '628132869806');
+assert.strictEqual(config.botPhone, '6281952538106');
+assert.strictEqual(config.ownerPhone, '6285855180131');
+console.log('  [PASS] Nomor Bot (6281952538106) & Owner (6285855180131) terkonfigurasi dengan benar.');
 
-console.log('  [PASS] Nomor Bot & Owner terkonfigurasi dengan benar.');
+// 5. Test Parser Asisten Admin (/tambah-produk)
+console.log('\n5. Pengujian Parser Perintah Tambah Produk:');
+const { parseProductText } = require('../src/services/adminAssistant');
+const sampleCmd = `/tambah-produk
+Nama: Arabika Kerinci 250g
+Harga: 85.000
+Stok: 25
+Kategori: Biji Kopi
+Roast: Medium
+Bean: Arabika
+Deskripsi: Single origin aroma floral`;
+
+const parsed = parseProductText(sampleCmd);
+assert.strictEqual(parsed.name, 'Arabika Kerinci 250g');
+assert.strictEqual(parsed.price, 85000);
+assert.strictEqual(parsed.stock, 25);
+assert.strictEqual(parsed.category, 'Biji Kopi');
+assert.strictEqual(parsed.roast, 'Medium');
+assert.strictEqual(parsed.bean, 'Arabika');
+assert.strictEqual(parsed.description, 'Single origin aroma floral');
+console.log('  [PASS] Parser teks perintah produk berjalan akurat.');
 
 console.log('\n🎉 SEMUA TEST BERHASIL DILALUI DENGAN SUKSES! 🎉');
+

@@ -10,6 +10,8 @@ const axios = require('axios');
 const fs = require('fs');
 const config = require('../config');
 const { toWhatsAppJid, cleanPhoneNumber } = require('../utils/phone');
+const adminAssistant = require('./adminAssistant');
+
 
 let sock = null;
 let qrDataUrl = null;
@@ -53,6 +55,16 @@ async function initWhatsApp() {
     });
 
     sock.ev.on('creds.update', saveCreds);
+
+    // Listener pesan masuk (Asisten Admin Toko)
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+      if (type === 'notify' && messages && messages.length > 0) {
+        for (const msg of messages) {
+          await adminAssistant.handleIncomingMessage(sock, msg);
+        }
+      }
+    });
+
 
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
