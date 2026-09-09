@@ -3,6 +3,7 @@ const {
   DisconnectReason,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
+  Browsers,
 } = require('@whiskeysockets/baileys');
 const QRCode = require('qrcode');
 const pino = require('pino');
@@ -29,6 +30,22 @@ if (!fs.existsSync(config.sessionDir)) {
 const logger = pino({ level: 'silent' });
 
 /**
+ * Simulasi pengetikan manusia agar tidak dicurigai sistem anti-spam WhatsApp
+ */
+async function simulateTyping(jid, minMs = 1200, maxMs = 2600) {
+  try {
+    if (sock && jid) {
+      await sock.sendPresenceUpdate('composing', jid);
+      const delay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      await sock.sendPresenceUpdate('paused', jid);
+    }
+  } catch (err) {
+    // Abaikan error presence jika koneksi sedang fluktuatif
+  }
+}
+
+/**
  * Inisialisasi koneksi socket Baileys WhatsApp
  */
 async function initWhatsApp() {
@@ -44,14 +61,16 @@ async function initWhatsApp() {
       isLatest: true,
     }));
 
+    // Gunakan identitas resmi Windows Desktop agar 100% identik dengan aplikasi WhatsApp Web resmi
     sock = makeWASocket({
       version,
       logger,
       auth: state,
       printQRInTerminal: false,
-      browser: ['Toko Kopi Sembilan', 'Chrome', '1.0.0'],
+      browser: Browsers.windows('Desktop'),
       syncFullHistory: false,
       generateHighQualityLinkPreview: true,
+      markOnlineOnConnect: true,
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -164,6 +183,7 @@ async function sendTextMessage(phone, message) {
   }
 
   const jid = toWhatsAppJid(phone);
+  await simulateTyping(jid, 1000, 2200);
   const result = await sock.sendMessage(jid, { text: message });
 
   return {
@@ -225,6 +245,7 @@ async function sendMediaMessage(phone, mediaUrl, caption = '') {
     };
   }
 
+  await simulateTyping(jid, 1500, 3000);
   const result = await sock.sendMessage(jid, messagePayload);
 
   return {
@@ -283,5 +304,6 @@ module.exports = {
   sendTextMessage,
   sendMediaMessage,
   resetSession,
+  simulateTyping,
 };
 

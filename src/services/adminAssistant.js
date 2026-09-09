@@ -53,6 +53,23 @@ function parseProductText(text) {
 
 
 /**
+ * Helper pengiriman balasan dengan simulasi mengetik manusia (anti-detection)
+ */
+async function replyMessage(sock, jid, content) {
+  try {
+    if (sock && jid) {
+      await sock.sendPresenceUpdate('composing', jid);
+      const delay = Math.floor(Math.random() * 800) + 1200;
+      await new Promise((r) => setTimeout(r, delay));
+      await sock.sendPresenceUpdate('paused', jid);
+    }
+  } catch (e) {
+    // Abaikan jika presence gagal
+  }
+  return sock.sendMessage(jid, content);
+}
+
+/**
  * Handler utama untuk memproses pesan masuk dari Owner
  */
 async function handleIncomingMessage(sock, msg) {
@@ -135,14 +152,14 @@ Ketik: */stok*
 
 _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
 
-      await sock.sendMessage(remoteJid, { text: helpText });
+      await replyMessage(sock, remoteJid, { text: helpText });
       return;
     }
 
     // Jika BUKAN nomor Owner, tolak perintah khusus admin secara sopan
     if (!isOwner) {
       if (cleanCmd.startsWith('tambah') || cleanCmd.startsWith('ubah') || cleanCmd.startsWith('pesanan') || cleanCmd.startsWith('stok')) {
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `⚠️ *Akses Khusus Admin*\nPerintah ini hanya bisa digunakan oleh tim pengelola Toko Kopi Sembilan.\nNomor Anda terdeteksi: *${senderPhone}*`,
         });
         return;
@@ -150,7 +167,7 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
 
       // Balas pesan umum untuk pelanggan
       if (lowerText.match(/^(halo|hai|p|assalamualaikum|info|order|kopi)/)) {
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `Halo! Terima kasih sudah menghubungi *Toko Kopi Sembilan* ☕\n\nUntuk melihat katalog biji kopi pilihan dan pemesanan online, yuk kunjungi website resmi kami di:\n👉 https://tokokopisembilan.com\n\nJika ada pertanyaan atau butuh bantuan admin, silakan hubungi nomor toko kami di: wa.me/628132869806 ya!`,
         });
       }
@@ -166,13 +183,13 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
       const parsed = parseProductText(bodyText);
 
       if (!parsed.name || parsed.price <= 0) {
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `⚠️ *Format Belum Lengkap!*\n\nMinimal sertakan Nama dan Harga.\nContoh:\n\`/tambah-produk\nNama: Robusta Temanggung\nHarga: 65000\nStok: 25\nKategori: Filter\``,
         });
         return;
       }
 
-      await sock.sendMessage(remoteJid, {
+      await replyMessage(sock, remoteJid, {
         text: `⏳ Sedang mengunggah dan mendaftarkan produk *${parsed.name}* ke website...`,
       });
 
@@ -220,11 +237,11 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
 
 Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
 
-        await sock.sendMessage(remoteJid, { text: successMsg });
+        await replyMessage(sock, remoteJid, { text: successMsg });
       } catch (apiErr) {
         console.error('[Admin Assistant] Error API Laravel:', apiErr.response?.data || apiErr.message);
         const errMsg = apiErr.response?.data?.message || apiErr.message;
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `❌ *Gagal menambahkan produk ke website.*\nError: ${errMsg}\n\nPastikan server website toko sedang berjalan di ${config.storeApiUrl}.`,
         });
       }
@@ -233,7 +250,7 @@ Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
 
     // 3. Perintah: /pesanan atau /order (atau pesanan)
     if (cleanCmd === 'pesanan' || cleanCmd === 'order') {
-      await sock.sendMessage(remoteJid, { text: '⏳ Mengambil data pesanan terbaru dari website...' });
+      await replyMessage(sock, remoteJid, { text: '⏳ Mengambil data pesanan terbaru dari website...' });
 
       try {
         const response = await axios.get(`${config.storeApiUrl}/api/bot/orders`, {
@@ -257,9 +274,9 @@ Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
           });
         }
 
-        await sock.sendMessage(remoteJid, { text: reply });
+        await replyMessage(sock, remoteJid, { text: reply });
       } catch (err) {
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `❌ Gagal mengambil pesanan dari website: ${err.message}`,
         });
       }
@@ -268,7 +285,7 @@ Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
 
     // 4. Perintah: /stok atau /produk (atau stok)
     if (cleanCmd === 'stok' || cleanCmd === 'produk') {
-      await sock.sendMessage(remoteJid, { text: '⏳ Mengambil daftar stok produk...' });
+      await replyMessage(sock, remoteJid, { text: '⏳ Mengambil daftar stok produk...' });
 
       try {
         const response = await axios.get(`${config.storeApiUrl}/api/bot/products`, {
@@ -288,9 +305,9 @@ Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
           });
         }
 
-        await sock.sendMessage(remoteJid, { text: reply });
+        await replyMessage(sock, remoteJid, { text: reply });
       } catch (err) {
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `❌ Gagal mengambil data stok dari website: ${err.message}`,
         });
       }
@@ -301,7 +318,7 @@ Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
     if (cleanCmd.startsWith('ubah-stok')) {
       const parts = bodyText.split(' ').filter(Boolean);
       if (parts.length < 3) {
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `Format salah! Gunakan:\n\`/ubah-stok [Nama/ID Produk] [JumlahBaru]\`\nContoh: \`/ubah-stok Gayo 40\``,
         });
         return;
@@ -317,12 +334,12 @@ Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
           { headers: { 'X-BOT-SECRET': config.storeApiKey }, timeout: 15000 }
         );
 
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `✅ ${response.data.message}`,
         });
       } catch (err) {
         const msgErr = err.response?.data?.message || err.message;
-        await sock.sendMessage(remoteJid, { text: `❌ ${msgErr}` });
+        await replyMessage(sock, remoteJid, { text: `❌ ${msgErr}` });
       }
       return;
     }
@@ -332,7 +349,7 @@ Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
 
       const parts = bodyText.split(' ').filter(Boolean);
       if (parts.length < 3) {
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `Format salah! Gunakan:\n\`/ubah-harga [Nama/ID Produk] [HargaBaru]\`\nContoh: \`/ubah-harga Gayo 95000\``,
         });
         return;
@@ -348,12 +365,12 @@ Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
           { headers: { 'X-BOT-SECRET': config.storeApiKey }, timeout: 15000 }
         );
 
-        await sock.sendMessage(remoteJid, {
+        await replyMessage(sock, remoteJid, {
           text: `✅ ${response.data.message}`,
         });
       } catch (err) {
         const msgErr = err.response?.data?.message || err.message;
-        await sock.sendMessage(remoteJid, { text: `❌ ${msgErr}` });
+        await replyMessage(sock, remoteJid, { text: `❌ ${msgErr}` });
       }
       return;
     }
