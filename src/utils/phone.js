@@ -6,8 +6,9 @@
 function cleanPhoneNumber(phone) {
   if (!phone) return '';
   
-  // Hapus semua karakter non-digit (spasi, tanda plus, tanda hubung, kurung, dll)
-  let cleaned = String(phone).replace(/\D/g, '');
+  // Buang suffix JID @... dan device index :device (misal :0, :1 pada WA multi-device)
+  const raw = String(phone).split('@')[0].split(':')[0];
+  let cleaned = raw.replace(/\D/g, '');
 
   // Jika berawalan 0, ubah menjadi 62 (contoh: 08123456789 -> 628123456789)
   if (cleaned.startsWith('0')) {
@@ -20,6 +21,7 @@ function cleanPhoneNumber(phone) {
 
   return cleaned;
 }
+
 
 function toWhatsAppJid(phone) {
   const cleaned = cleanPhoneNumber(phone);

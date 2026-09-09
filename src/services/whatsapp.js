@@ -57,13 +57,14 @@ async function initWhatsApp() {
     sock.ev.on('creds.update', saveCreds);
 
     // Listener pesan masuk (Asisten Admin Toko)
-    sock.ev.on('messages.upsert', async ({ messages, type }) => {
-      if (type === 'notify' && messages && messages.length > 0) {
+    sock.ev.on('messages.upsert', async ({ messages }) => {
+      if (messages && messages.length > 0) {
         for (const msg of messages) {
           await adminAssistant.handleIncomingMessage(sock, msg);
         }
       }
     });
+
 
 
     sock.ev.on('connection.update', async (update) => {

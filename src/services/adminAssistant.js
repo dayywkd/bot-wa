@@ -51,54 +51,63 @@ function parseProductText(text) {
  */
 async function handleIncomingMessage(sock, msg) {
   try {
-    if (!msg || !msg.message || msg.key.fromMe) return;
+    if (!msg || !msg.message) return;
+
+    // Jangan proses pesan yang dikirim oleh bot itu sendiri ke nomor lain
+    if (msg.key.fromMe) return;
 
     const remoteJid = msg.key.remoteJid;
     if (!remoteJid || remoteJid.includes('@broadcast') || remoteJid.includes('@g.us')) {
-      return; // Abaikan pesan grup atau story
+      return; // Abaikan pesan grup atau status/story
     }
 
-    const senderPhone = cleanPhoneNumber(remoteJid.split('@')[0]);
-    const isOwner = senderPhone === config.ownerPhone;
+    const senderPhone = cleanPhoneNumber(remoteJid);
 
-    // Ambil isi teks pesan (dari teks biasa atau caption gambar)
+    // Buka wrapper pesan jika menggunakan fitur pesan sementara (ephemeral) atau viewOnce
+    let rawMsg = msg.message;
+    if (rawMsg?.ephemeralMessage) rawMsg = rawMsg.ephemeralMessage.message;
+    if (rawMsg?.viewOnceMessage) rawMsg = rawMsg.viewOnceMessage.message;
+    if (rawMsg?.viewOnceMessageV2) rawMsg = rawMsg.viewOnceMessageV2.message;
+    if (rawMsg?.documentWithCaptionMessage) rawMsg = rawMsg.documentWithCaptionMessage.message;
+
+    // Ambil isi teks pesan (dari teks biasa, caption gambar/dokumen)
     let bodyText =
-      msg.message.conversation ||
-      msg.message.extendedTextMessage?.text ||
-      msg.message.imageMessage?.caption ||
+      rawMsg?.conversation ||
+      rawMsg?.extendedTextMessage?.text ||
+      rawMsg?.imageMessage?.caption ||
+      rawMsg?.documentMessage?.caption ||
+      rawMsg?.videoMessage?.caption ||
       '';
     bodyText = bodyText.trim();
 
     if (!bodyText) return;
 
-    // Jika BUKAN nomor Owner, beri pesan sopan standar
-    if (!isOwner) {
-      // Hanya balas jika pengguna menyapa pertama kali
-      if (bodyText.toLowerCase().match(/^(halo|hai|p|assalamualaikum|info|menu|order)/)) {
-        await sock.sendMessage(remoteJid, {
-          text: `Halo! Terima kasih telah menghubungi *Toko Kopi Sembilan* ☕\n\nUntuk melihat katalog dan melakukan pemesanan online, silakan kunjungi website resmi kami:\n👉 https://tokokopisembilan.com\n\nUntuk berbicara langsung dengan admin toko kami, silakan hubungi: wa.me/${config.ownerPhone}`,
-        });
-      }
-      return;
-    }
+    // Daftar nomor yang berhak sebagai Admin/Owner
+    const allowedOwners = [
+      cleanPhoneNumber(config.ownerPhone),
+      '6285855180131',
+      '628132869806',
+    ];
+    const isOwner = allowedOwners.includes(senderPhone);
 
-    console.log(`[Admin Assistant] Perintah diterima dari Owner (${senderPhone}): ${bodyText.slice(0, 50)}...`);
+    console.log(`[WhatsApp] Pesan masuk dari: ${senderPhone} (isOwner: ${isOwner}) | Teks: "${bodyText}"`);
 
-    const lowerCmd = bodyText.toLowerCase();
+    const lowerText = bodyText.toLowerCase();
+    const cleanCmd = lowerText.replace(/^\//, ''); // Bisa pakai slash '/' ataupun tidak
 
-    // 1. Perintah: /bantuan, /help, /menu
-    if (lowerCmd === '/bantuan' || lowerCmd === '/help' || lowerCmd === '/menu') {
+    // 1. Perintah: /bantuan, /help, /menu, bantuan, menu
+    if (cleanCmd === 'bantuan' || cleanCmd === 'help' || cleanCmd === 'menu') {
       const helpText = `☕ *ASISTEN ADMIN TOKO KOPI SEMBILAN* ☕
 Halo Boss! Bot siap membantu mengelola website langsung dari chat:
 
 📦 *1. TAMBAH PRODUK BARU*
-Kirim *Foto Produk* dengan caption format berikut:
-\`/tambah-produk
+Kirim *Foto Produk* dengan caption:
+/tambah-produk
 Nama: Arabika Kerinci 250g
 Harga: 85000
 Stok: 20
 Kategori: Biji Kopi
-Deskripsi: Single origin aroma floral dan citrus.\`
+Deskripsi: Single origin aroma floral dan citrus.
 
 📊 *2. CEK PESANAN TERBARU*
 Ketik: */pesanan* atau */order*
@@ -112,11 +121,34 @@ Contoh: \`/ubah-stok Gayo 35\`
 
 💰 *5. UBAH HARGA PRODUK*
 Ketik: */ubah-harga [Nama Produk] [HargaBaru]*
-Contoh: \`/ubah-harga Gayo 90000\``;
+Contoh: \`/ubah-harga Gayo 90000\`
+
+_Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
 
       await sock.sendMessage(remoteJid, { text: helpText });
       return;
     }
+
+    // Jika BUKAN nomor Owner, tolak perintah khusus admin secara sopan
+    if (!isOwner) {
+      if (lowerText.startsWith('/tambah') || lowerText.startsWith('/ubah') || lowerText.startsWith('/pesanan')) {
+        await sock.sendMessage(remoteJid, {
+          text: `⚠️ *Akses Ditolak*\nPerintah ini khusus untuk nomor Owner Toko Kopi Sembilan.\nNomor Anda terdeteksi: *${senderPhone}*`,
+        });
+        return;
+      }
+
+      // Balas pesan umum untuk pelanggan
+      if (lowerText.match(/^(halo|hai|p|assalamualaikum|info|order|kopi)/)) {
+        await sock.sendMessage(remoteJid, {
+          text: `Halo! Terima kasih telah menghubungi *Toko Kopi Sembilan* ☕\n\nUntuk melihat katalog dan melakukan pemesanan online, silakan kunjungi website resmi kami:\n👉 https://tokokopisembilan.com\n\nUntuk berbicara langsung dengan admin toko kami, silakan hubungi: wa.me/${config.ownerPhone}`,
+        });
+      }
+      return;
+    }
+
+    console.log(`[Admin Assistant] Mengeksekusi perintah Owner (${senderPhone}): ${bodyText.slice(0, 50)}...`);
+
 
     // 2. Perintah: /tambah-produk atau /tambah
     if (lowerCmd.startsWith('/tambah-produk') || lowerCmd.startsWith('/tambah')) {

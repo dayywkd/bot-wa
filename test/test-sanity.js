@@ -12,10 +12,12 @@ assert.strictEqual(cleanPhoneNumber('081234567890'), '6281234567890');
 assert.strictEqual(cleanPhoneNumber('+6281234567890'), '6281234567890');
 assert.strictEqual(cleanPhoneNumber('6281234567890'), '6281234567890');
 assert.strictEqual(cleanPhoneNumber('0819-5253-8106'), '6281952538106');
-assert.strictEqual(cleanPhoneNumber('8132869806'), '628132869806');
+assert.strictEqual(cleanPhoneNumber('6285855180131:0@s.whatsapp.net'), '6285855180131');
+assert.strictEqual(cleanPhoneNumber('6285855180131:4@s.whatsapp.net'), '6285855180131');
 assert.strictEqual(toWhatsAppJid('081952538106'), '6281952538106@s.whatsapp.net');
 assert.strictEqual(toWhatsAppJid('+628132869806'), '628132869806@s.whatsapp.net');
-console.log('  [PASS] Normalisasi nomor telepon berfungsi dengan sempurna.');
+console.log('  [PASS] Normalisasi nomor telepon (termasuk multi-device :0/:4) berfungsi dengan sempurna.');
+
 
 // 2. Test Format Pesan / Template
 console.log('\n2. Pengujian Template Pesan Transaksional:');
