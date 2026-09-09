@@ -82,13 +82,16 @@ async function handleIncomingMessage(sock, msg) {
 
     if (!bodyText) return;
 
-    // Daftar nomor yang berhak sebagai Admin/Owner
+    // Daftar nomor dan WhatsApp LID yang berhak sebagai Admin/Owner
     const allowedOwners = [
       cleanPhoneNumber(config.ownerPhone),
       '6285855180131',
+      '085855180131',
       '628132869806',
+      '137683867316472', // WhatsApp LID untuk nomor Owner (085855180131)
     ];
     const isOwner = allowedOwners.includes(senderPhone);
+
 
     console.log(`[WhatsApp] Pesan masuk dari: ${senderPhone} (isOwner: ${isOwner}) | Teks: "${bodyText}"`);
 
