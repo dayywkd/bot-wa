@@ -221,10 +221,54 @@ async function sendMediaMessage(phone, mediaUrl, caption = '') {
   };
 }
 
+/**
+ * Reset sesi WhatsApp (Logout dan hapus folder session)
+ * Memungkinkan pergantian nomor bot secara instan.
+ */
+async function resetSession() {
+  console.log('[WhatsApp] Melakukan reset sesi WhatsApp...');
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+
+  try {
+    if (sock) {
+      await sock.logout().catch(() => {});
+    }
+  } catch (err) {
+    console.log('[WhatsApp] Catatan saat logout:', err.message);
+  }
+
+  connectionStatus = 'disconnected';
+  qrDataUrl = null;
+  qrRaw = null;
+  botJid = null;
+
+  try {
+    if (fs.existsSync(config.sessionDir)) {
+      fs.rmSync(config.sessionDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(config.sessionDir, { recursive: true });
+  } catch (fsErr) {
+    console.error('[WhatsApp] Gagal membersihkan folder sesi:', fsErr.message);
+  }
+
+  // Inisialisasi ulang untuk menghasilkan QR code baru
+  setTimeout(initWhatsApp, 1500);
+
+  return {
+    success: true,
+    message: 'Sesi WhatsApp berhasil di-reset. Silakan scan QR code baru di /qr.',
+  };
+}
+
 module.exports = {
   initWhatsApp,
   getStatus,
   getQrCode,
   sendTextMessage,
   sendMediaMessage,
+  resetSession,
 };
+

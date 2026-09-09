@@ -33,6 +33,19 @@ app.get('/api/qr-status', (req, res) => {
 });
 
 /**
+ * Endpoint reset sesi (dipanggil via UI /qr)
+ */
+app.post('/api/reset-session', async (req, res) => {
+  try {
+    const result = await whatsapp.resetSession();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+/**
  * Endpoint 3.2: GET /qr (Scan Login WhatsApp)
  */
 app.get('/qr', (req, res) => {
@@ -159,6 +172,20 @@ app.get('/qr', (req, res) => {
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    .btn-reset {
+      margin-top: 14px;
+      padding: 8px 16px;
+      background: #fdf2f2;
+      color: #991b1b;
+      border: 1px solid #f87171;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-reset:hover {
+      background: #fee2e2;
     }
   </style>
 </head>
@@ -194,6 +221,14 @@ app.get('/qr', (req, res) => {
       }
     </div>
 
+    <div id="action-container" style="margin-bottom: 12px;">
+      ${
+        qrData.connected
+          ? `<button class="btn-reset" onclick="resetBotSession()">🔄 Ganti Nomor / Scan Ulang</button>`
+          : ''
+      }
+    </div>
+
     <div class="instructions">
       <strong style="display:block;margin-bottom:6px;">Instruksi Pemindaian:</strong>
       <ol>
@@ -208,6 +243,20 @@ app.get('/qr', (req, res) => {
   <script>
     let isConnected = ${qrData.connected ? 'true' : 'false'};
 
+    async function resetBotSession() {
+      if (!confirm('Apakah Anda yakin ingin memutuskan koneksi bot saat ini untuk scan ulang dengan nomor baru?')) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/reset-session', { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || 'Sesi di-reset. Menyiapkan QR Code baru...');
+        location.reload();
+      } catch (err) {
+        alert('Gagal me-reset sesi: ' + err.message);
+      }
+    }
+
     async function checkStatus() {
       try {
         const res = await fetch('/api/qr-status');
@@ -215,6 +264,7 @@ app.get('/qr', (req, res) => {
         
         const statusContainer = document.getElementById('status-container');
         const qrContainer = document.getElementById('qr-container');
+        const actionContainer = document.getElementById('action-container');
 
         if (data.connected) {
           if (!isConnected) {
@@ -228,10 +278,12 @@ app.get('/qr', (req, res) => {
                 <strong>Perangkat WhatsApp Aktif</strong><br>
                 Nomor: <span class="phone-tag">\${data.bot_number}</span>
               </div>\`;
+            actionContainer.innerHTML = '<button class="btn-reset" onclick="resetBotSession()">🔄 Ganti Nomor / Scan Ulang</button>';
           }
         } else {
           isConnected = false;
           statusContainer.innerHTML = '<div class="status-badge status-connecting">● Menunggu Scan WhatsApp</div>';
+          actionContainer.innerHTML = '';
           if (data.qrDataUrl) {
             qrContainer.innerHTML = \`<img src="\${data.qrDataUrl}" alt="QR Code WhatsApp" class="qr-image">\`;
           } else {
@@ -248,6 +300,7 @@ app.get('/qr', (req, res) => {
     }
 
     // Polling setiap 3 detik
+
     setInterval(checkStatus, 3000);
   </script>
 </body>

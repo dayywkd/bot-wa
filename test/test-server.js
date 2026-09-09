@@ -24,7 +24,7 @@ async function runTests() {
     assert.strictEqual(resRoot.status, 200);
     const dataRoot = await resRoot.json();
     assert.strictEqual(dataRoot.service, 'Toko Kopi Sembilan WA Gateway');
-    assert.strictEqual(dataRoot.bot_number, '6281952538106');
+    assert.strictEqual(dataRoot.bot_number, config.botPhone);
     console.log('   [PASS] GET / merespon dengan benar:', dataRoot);
 
     // 2. Test GET /qr
@@ -34,7 +34,7 @@ async function runTests() {
     const htmlQr = await resQr.text();
     assert.ok(htmlQr.includes('TOKO KOPI SEMBILAN'));
     assert.ok(htmlQr.includes('Perangkat Tertaut'));
-    assert.ok(htmlQr.includes('6281952538106'));
+    assert.ok(htmlQr.includes(config.botPhone));
     console.log('   [PASS] GET /qr menghasilkan HTML yang valid.');
 
     // 3. Test GET /api/qr-status
@@ -43,8 +43,9 @@ async function runTests() {
     assert.strictEqual(resQrStatus.status, 200);
     const dataQrStatus = await resQrStatus.json();
     assert.ok('connected' in dataQrStatus);
-    assert.strictEqual(dataQrStatus.bot_number, '6281952538106');
+    assert.strictEqual(dataQrStatus.bot_number, config.botPhone);
     console.log('   [PASS] GET /api/qr-status berfungsi normal.');
+
 
     // 4. Test POST /send-message tanpa token (Harus 401)
     console.log('\n4. Menguji proteksi 401 Unauthorized pada POST /send-message...');

@@ -101,8 +101,9 @@ console.log('  [PASS] Auth Middleware memvalidasi Bearer Token dengan tepat.');
 
 // 4. Test Konfigurasi
 console.log('\n4. Pengujian Konfigurasi:');
-assert.strictEqual(config.botPhone, '6281952538106');
+assert.strictEqual(config.botPhone, '6285855180131');
 assert.strictEqual(config.ownerPhone, '628132869806');
+
 console.log('  [PASS] Nomor Bot & Owner terkonfigurasi dengan benar.');
 
 console.log('\n🎉 SEMUA TEST BERHASIL DILALUI DENGAN SUKSES! 🎉');
