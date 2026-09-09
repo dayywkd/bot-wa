@@ -84,14 +84,16 @@ async function handleIncomingMessage(sock, msg) {
 
     // Daftar nomor dan WhatsApp LID yang berhak sebagai Admin/Owner
     const allowedOwners = [
-      cleanPhoneNumber(config.ownerPhone),
-      '6285855180131',
+      '628132869806',   // Nomor Toko / Owner Utama
+      '08132869806',
+      '6285855180131',  // Nomor Admin
       '085855180131',
-      '628132869806',
-      '137683867316472', // WhatsApp LID untuk nomor Owner (085855180131)
-    ];
+      '6285336688839',  // Nomor Admin Tambahan
+      '085336688839',
+      '137683867316472', // WhatsApp LID Owner
+      cleanPhoneNumber(config.ownerPhone),
+    ].filter(Boolean);
     const isOwner = allowedOwners.includes(senderPhone);
-
 
     console.log(`[WhatsApp] Pesan masuk dari: ${senderPhone} (isOwner: ${isOwner}) | Teks: "${bodyText}"`);
 
@@ -101,31 +103,29 @@ async function handleIncomingMessage(sock, msg) {
 
     // 1. Perintah: /bantuan, /help, /menu, bantuan, menu
     if (cleanCmd === 'bantuan' || cleanCmd === 'help' || cleanCmd === 'menu') {
-      const helpText = `☕ *ASISTEN ADMIN TOKO KOPI SEMBILAN* ☕
-Halo Boss! Bot siap membantu mengelola website langsung dari chat:
+      const helpText = `☕ *Asisten Toko Kopi Sembilan* ☕
+Halo! Berikut beberapa perintah yang bisa Anda gunakan langsung dari chat WhatsApp:
 
-📦 *1. TAMBAH PRODUK BARU*
-Kirim *Foto Produk* dengan caption:
+📦 *1. Tambah Produk Baru*
+Kirim *Foto Produk* dengan format keterangan:
 /tambah-produk
 Nama: Arabika Kerinci 250g
 Harga: 85000
 Stok: 20
 Kategori: Biji Kopi
-Deskripsi: Single origin aroma floral dan citrus.
+Deskripsi: Single origin aroma floral dan citrus manis.
 
-📊 *2. CEK PESANAN TERBARU*
+📊 *2. Cek Pesanan Terbaru*
 Ketik: */pesanan* atau */order*
 
-📋 *3. CEK STOK PRODUK*
+📋 *3. Cek Stok Produk*
 Ketik: */stok*
 
-✏️ *4. UBAH STOK PRODUK*
-Ketik: */ubah-stok [Nama Produk] [JumlahBaru]*
-Contoh: \`/ubah-stok Gayo 35\`
-
-💰 *5. UBAH HARGA PRODUK*
-Ketik: */ubah-harga [Nama Produk] [HargaBaru]*
-Contoh: \`/ubah-harga Gayo 90000\`
+✏️ *4. Ubah Stok & Harga Cepat*
+- */ubah-stok [Nama Produk] [JumlahBaru]*
+  Contoh: \`/ubah-stok Gayo 35\`
+- */ubah-harga [Nama Produk] [HargaBaru]*
+  Contoh: \`/ubah-harga Gayo 90000\`
 
 _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
 
@@ -137,7 +137,7 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
     if (!isOwner) {
       if (cleanCmd.startsWith('tambah') || cleanCmd.startsWith('ubah') || cleanCmd.startsWith('pesanan') || cleanCmd.startsWith('stok')) {
         await sock.sendMessage(remoteJid, {
-          text: `⚠️ *Akses Ditolak*\nPerintah ini khusus untuk nomor Owner Toko Kopi Sembilan.\nNomor Anda terdeteksi: *${senderPhone}*`,
+          text: `⚠️ *Akses Khusus Admin*\nPerintah ini hanya bisa digunakan oleh tim pengelola Toko Kopi Sembilan.\nNomor Anda terdeteksi: *${senderPhone}*`,
         });
         return;
       }
@@ -145,13 +145,14 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
       // Balas pesan umum untuk pelanggan
       if (lowerText.match(/^(halo|hai|p|assalamualaikum|info|order|kopi)/)) {
         await sock.sendMessage(remoteJid, {
-          text: `Halo! Terima kasih telah menghubungi *Toko Kopi Sembilan* ☕\n\nUntuk melihat katalog dan melakukan pemesanan online, silakan kunjungi website resmi kami:\n👉 https://tokokopisembilan.com\n\nUntuk berbicara langsung dengan admin toko kami, silakan hubungi: wa.me/${config.ownerPhone}`,
+          text: `Halo! Terima kasih sudah menghubungi *Toko Kopi Sembilan* ☕\n\nUntuk melihat katalog biji kopi pilihan dan pemesanan online, yuk kunjungi website resmi kami di:\n👉 https://tokokopisembilan.com\n\nJika ada pertanyaan atau butuh bantuan admin, silakan hubungi nomor toko kami di: wa.me/628132869806 ya!`,
         });
       }
       return;
     }
 
-    console.log(`[Admin Assistant] Mengeksekusi perintah Owner (${senderPhone}): ${bodyText.slice(0, 50)}...`);
+    console.log(`[Admin Assistant] Mengeksekusi perintah Admin (${senderPhone}): ${bodyText.slice(0, 50)}...`);
+
 
     // 2. Perintah: /tambah-produk atau /tambah (atau tambah-produk)
     if (cleanCmd.startsWith('tambah-produk') || cleanCmd.startsWith('tambah')) {
@@ -201,15 +202,15 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
         });
 
         const p = response.data.product;
-        const successMsg = `✅ *PRODUK BERHASIL DITAMBAHKAN KE WEBSITE!* 🎉
+        const successMsg = `✅ *Produk Berhasil Ditambahkan ke Website!* 🎉
 
 📦 *Nama*: ${p.name}
 💰 *Harga*: Rp ${Number(p.price).toLocaleString('id-ID')}
-📊 *Stok*: ${p.stock}
+📊 *Stok*: ${p.stock} pcs
 🏷️ *Kategori*: ${p.category}
-🔗 *Link Web*: ${p.url}
+🔗 *Link*: ${p.url}
 
-Produk sudah langsung aktif dan dapat dibeli oleh pelanggan di website!`;
+Produk sudah langsung aktif dan siap dipesan pelanggan ya!`;
 
         await sock.sendMessage(remoteJid, { text: successMsg });
       } catch (apiErr) {
@@ -233,9 +234,10 @@ Produk sudah langsung aktif dan dapat dibeli oleh pelanggan di website!`;
         });
 
         const { today_summary, recent_orders } = response.data;
-        let reply = `📊 *RINGKASAN PESANAN TOKO KOPI SEMBILAN*\n`;
+        let reply = `📊 *Ringkasan Pesanan Toko Kopi Sembilan*\n`;
         reply += `📅 Hari Ini: *${today_summary.count} Pesanan* (Total: Rp ${Number(today_summary.revenue).toLocaleString('id-ID')})\n\n`;
         reply += `*5 Transaksi Terbaru:*\n`;
+
 
         if (!recent_orders || recent_orders.length === 0) {
           reply += `_Belum ada pesanan masuk baru-baru ini._`;
