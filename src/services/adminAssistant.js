@@ -21,30 +21,36 @@ function parseProductText(text) {
   const lines = text.split('\n');
   for (const rawLine of lines) {
     const line = rawLine.trim();
-    if (!line || line.startsWith('/tambah')) continue;
+    if (!line || line.toLowerCase().startsWith('/tambah') || line.toLowerCase().startsWith('tambah')) continue;
 
-    const lower = line.toLowerCase();
-    if (lower.startsWith('nama:') || lower.startsWith('nama produk:')) {
-      result.name = line.split(':')[1]?.trim() || '';
-    } else if (lower.startsWith('harga:')) {
-      const priceStr = line.split(':')[1]?.replace(/\D/g, '') || '0';
+    const colonIdx = line.indexOf(':');
+    if (colonIdx === -1) continue;
+
+    const key = line.substring(0, colonIdx).trim().toLowerCase();
+    const val = line.substring(colonIdx + 1).trim();
+
+    if (key === 'nama' || key === 'nama produk') {
+      result.name = val;
+    } else if (key === 'harga') {
+      const priceStr = val.replace(/\D/g, '') || '0';
       result.price = parseFloat(priceStr) || 0;
-    } else if (lower.startsWith('stok:')) {
-      const stockStr = line.split(':')[1]?.replace(/\D/g, '') || '10';
+    } else if (key === 'stok') {
+      const stockStr = val.replace(/\D/g, '') || '10';
       result.stock = parseInt(stockStr, 10) || 10;
-    } else if (lower.startsWith('kategori:')) {
-      result.category = line.split(':')[1]?.trim() || 'Biji Kopi';
-    } else if (lower.startsWith('deskripsi:') || lower.startsWith('keterangan:')) {
-      result.description = line.split(':')[1]?.trim() || '';
-    } else if (lower.startsWith('roast:') || lower.startsWith('roasting:')) {
-      result.roast = line.split(':')[1]?.trim() || 'Medium';
-    } else if (lower.startsWith('bean:') || lower.startsWith('jenis:')) {
-      result.bean = line.split(':')[1]?.trim() || 'Arabika';
+    } else if (key === 'kategori') {
+      result.category = val || 'Biji Kopi';
+    } else if (key === 'deskripsi' || key === 'dekripsi' || key === 'keterangan') {
+      result.description = val;
+    } else if (key === 'roast' || key === 'roasting') {
+      result.roast = val || 'Medium';
+    } else if (key === 'bean' || key === 'jenis') {
+      result.bean = val || 'Arabika';
     }
   }
 
   return result;
 }
+
 
 /**
  * Handler utama untuk memproses pesan masuk dari Owner
@@ -180,9 +186,11 @@ _Nomor Anda terdeteksi sebagai:_ *${senderPhone}*`;
       form.append('bean_type', parsed.bean);
 
       // Jika ada gambar terlampir, unduh dan masukkan ke form-data
-      if (msg.message.imageMessage) {
+      const hasImage = rawMsg?.imageMessage || msg.message?.imageMessage;
+      if (hasImage) {
         try {
-          const buffer = await downloadMediaMessage(msg, 'buffer', {});
+          const downloadTarget = rawMsg?.imageMessage ? { ...msg, message: rawMsg } : msg;
+          const buffer = await downloadMediaMessage(downloadTarget, 'buffer', {});
           form.append('image', buffer, {
             filename: `${parsed.name.replace(/\s+/g, '_').toLowerCase()}.jpg`,
             contentType: 'image/jpeg',

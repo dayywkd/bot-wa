@@ -128,7 +128,23 @@ assert.strictEqual(parsed.category, 'Biji Kopi');
 assert.strictEqual(parsed.roast, 'Medium');
 assert.strictEqual(parsed.bean, 'Arabika');
 assert.strictEqual(parsed.description, 'Single origin aroma floral');
-console.log('  [PASS] Parser teks perintah produk berjalan akurat.');
+
+// Uji coba format teks dengan spasi di 'Harga :' dan typo 'Dekripsi:'
+const userCmd = `tambah-produk
+Nama: Test
+Harga : 80000
+Stok: 20
+Kategori: Biji Kopi
+Dekripsi: Single origin`;
+
+const userParsed = parseProductText(userCmd);
+assert.strictEqual(userParsed.name, 'Test');
+assert.strictEqual(userParsed.price, 80000);
+assert.strictEqual(userParsed.stock, 20);
+assert.strictEqual(userParsed.category, 'Biji Kopi');
+assert.strictEqual(userParsed.description, 'Single origin');
+console.log('  [PASS] Parser teks perintah produk (termasuk variasi spasi & dekripsi) berjalan akurat.');
 
 console.log('\n🎉 SEMUA TEST BERHASIL DILALUI DENGAN SUKSES! 🎉');
+
 
